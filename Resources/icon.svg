@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Pitatto. A window frame with its right half filled, and three short
+       strokes to its left: a window that has just landed against an edge.
+
+       The art sits on 824 of the 1024 canvas, which is the size macOS draws an
+       app icon at — full bleed would stand a head taller than everything
+       beside it in the Dock. The inner coordinates are kept in the 1024 space
+       and scaled as a group, so they read the same as the menu bar mark.
+
+       One weight throughout: the 56 stroke of the frame is also the weight of
+       the three strokes, and the filled half runs out to the frame's centre
+       line so the two join with no seam. -->
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffc14a"/>
+      <stop offset="1" stop-color="#ff6a2a"/>
+    </linearGradient>
+    <clipPath id="inner">
+      <rect x="188" y="188" width="648" height="648" rx="112"/>
+    </clipPath>
+  </defs>
+  <g transform="translate(100 100) scale(0.8047)">
+    <rect width="1024" height="1024" rx="230" fill="url(#ground)"/>
+    <g clip-path="url(#inner)">
+      <rect x="512" y="188" width="324" height="648" fill="#ffffff"/>
+    </g>
+    <rect x="188" y="188" width="648" height="648" rx="112"
+          fill="none" stroke="#ffffff" stroke-width="56"/>
+    <g stroke="#ffffff" stroke-width="56" stroke-linecap="round">
+      <line x1="440" y1="416" x2="384" y2="360"/>
+      <line x1="448" y1="512" x2="360" y2="512"/>
+      <line x1="440" y1="608" x2="384" y2="664"/>
+    </g>
+  </g>
+</svg>

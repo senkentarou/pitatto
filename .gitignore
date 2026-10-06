@@ -1,0 +1,15 @@
+.DS_Store
+.build/
+build/
+*.xcodeproj
+.swiftpm/
+xcuserdata/
+
+# Signing material. Nothing here needs it — the identity is passed in through
+# the environment — so anything matching these is something that slipped in.
+*.p12
+*.cer
+*.pem
+*.key
+*.certSigningRequest
+*.provisionprofile
