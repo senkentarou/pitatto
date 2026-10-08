@@ -14,8 +14,12 @@ with the window centred and the margin on all four sides. Each size can also hav
 | Move right | ⌃⌘→ |
 | Move up | ⌃⌘↑ |
 | Move down | ⌃⌘↓ |
+| Move to the left desktop | ⌃⇧⌘← |
+| Move to the right desktop | ⌃⇧⌘→ |
 
 Maximize fills the screen minus the menu bar and the Dock; it does not enter macOS full screen.
+Moving to a desktop switches the screen to that desktop along with the window. It needs "Move left
+a space" and "Move right a space" turned on in System Settings, under Keyboard Shortcuts > Mission Control.
 The app lives in the menu bar and shows a Dock icon only while its settings window is open.
 It goes online only to check for and download updates.
 
@@ -69,7 +73,7 @@ Open 「設定…」 from the menu bar icon. Changes apply immediately.
 - General: launch at login, Accessibility permission status
 - Shortcuts: one table for maximize and one for the edges, one row per action. The cycle column holds
   the keys above. The 15 fixed sizes (whole, 64 pt and 24 pt margin for maximize; 1/2, 1/4 and 3/4
-  for the edges) have no key by default
+  for the edges) have no key by default. Below them, the two desktop moves
 - Credits
 
 Click a field, then press a key combination. ⎋ cancels, ⌫ removes the key.

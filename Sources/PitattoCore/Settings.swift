@@ -48,12 +48,12 @@ public struct Settings: Equatable, Codable, Sendable {
 
 /// Every shortcut, keyed by the command it runs.
 ///
-/// A dictionary rather than a field each: there are twenty commands and
+/// A dictionary rather than a field each: there are twenty-two commands and
 /// fifteen of them ship with no key at all, so a field each would be twenty
 /// fields and no way to spell "nothing". A command is unbound when its key is
 /// absent or holds `nil`; the two are told apart only by `init(from:)`.
 ///
-/// Keyed by `String`, not by `SnapCommand`: `JSONEncoder` writes a dictionary
+/// Keyed by `String`, not by `ShortcutCommand`: `JSONEncoder` writes a dictionary
 /// with any other key type as a flat array of alternating keys and values,
 /// which is neither readable nor stable to hand-edit.
 public struct Shortcuts: Equatable, Codable, Sendable {
@@ -64,9 +64,14 @@ public struct Shortcuts: Equatable, Codable, Sendable {
   }
 
   /// nil when nothing is bound to `command`.
-  public subscript(command: SnapCommand) -> KeyCombo? {
+  public subscript(command: ShortcutCommand) -> KeyCombo? {
     get { combos[command.id] ?? nil }
     set { combos[command.id] = .some(newValue) }
+  }
+
+  public subscript(command: SnapCommand) -> KeyCombo? {
+    get { self[.snap(command)] }
+    set { self[.snap(command)] = newValue }
   }
 
   /// The commands bound to a combination another command also holds.
@@ -76,10 +81,10 @@ public struct Shortcuts: Equatable, Codable, Sendable {
   /// with no key are skipped rather than compared: most of them ship that way,
   /// and treating "nothing" as a combination would make every one of them
   /// collide with every other.
-  public func duplicatedCommands() -> Set<SnapCommand> {
-    var seen: [KeyCombo: SnapCommand] = [:]
-    var duplicated: Set<SnapCommand> = []
-    for command in SnapCommand.allCases {
+  public func duplicatedCommands() -> Set<ShortcutCommand> {
+    var seen: [KeyCombo: ShortcutCommand] = [:]
+    var duplicated: Set<ShortcutCommand> = []
+    for command in ShortcutCommand.allCases {
       guard let combo = self[command] else { continue }
       if let first = seen[combo] {
         duplicated.insert(first)
@@ -92,13 +97,16 @@ public struct Shortcuts: Equatable, Codable, Sendable {
   }
 
   /// The command other than `command` that `combo` is bound to, if there is one.
-  public func command(holding combo: KeyCombo, otherThan command: SnapCommand) -> SnapCommand? {
-    SnapCommand.allCases.first { $0 != command && self[$0] == combo }
+  public func command(holding combo: KeyCombo, otherThan command: ShortcutCommand)
+    -> ShortcutCommand?
+  {
+    ShortcutCommand.allCases.first { $0 != command && self[$0] == combo }
   }
 
   /// ⌃⌘↩ / ⌃⌘← / ⌃⌘→ / ⌃⌘↑ / ⌃⌘↓, so the app works with no setup. Not ⌥⌃,
   /// which is left free for other tools, and not ⌥⌘, whose arrows switch tabs
-  /// in browsers and editors.
+  /// in browsers and editors. The Desktop moves add ⇧ to the left and right
+  /// snaps, next to macOS's own ⌃← / ⌃→ for switching Desktops.
   ///
   /// The sized commands ship unbound. Every size is already reachable by
   /// cycling, so a default for each would spend fifteen key combinations to
@@ -114,10 +122,14 @@ public struct Shortcuts: Equatable, Codable, Sendable {
       keyCode: KeyCode.upArrow, modifiers: [.control, .command]),
     SnapCommand(action: .bottom).id: KeyCombo(
       keyCode: KeyCode.downArrow, modifiers: [.control, .command]),
+    ShortcutCommand.moveToSpace(.left).id: KeyCombo(
+      keyCode: KeyCode.leftArrow, modifiers: [.control, .shift, .command]),
+    ShortcutCommand.moveToSpace(.right).id: KeyCombo(
+      keyCode: KeyCode.rightArrow, modifiers: [.control, .shift, .command]),
   ])
 
-  /// A cycling command the blob has no entry for gets the shipped key; a sized
-  /// command stays unbound either way.
+  /// A cycling command or a Desktop move the blob has no entry for gets the
+  /// shipped key; a sized command stays unbound either way.
   ///
   /// The asymmetry is what makes an upgrade safe. A blob written before the
   /// sized commands existed holds exactly the five cycling keys, and a blob
@@ -127,11 +139,11 @@ public struct Shortcuts: Equatable, Codable, Sendable {
   /// older version".
   public init(from decoder: any Decoder) throws {
     var combos = try decoder.singleValueContainer().decode([String: KeyCombo?].self)
-    for action in SnapAction.allCases {
-      let cycling = SnapCommand(action: action)
-      if combos[cycling.id] == nil {
-        combos[cycling.id] = .some(Shortcuts.default[cycling])
-      }
+    let shipped =
+      SnapAction.allCases.map { ShortcutCommand.snap(SnapCommand(action: $0)) }
+      + SpaceDirection.allCases.map(ShortcutCommand.moveToSpace)
+    for command in shipped where combos[command.id] == nil {
+      combos[command.id] = .some(Shortcuts.default[command])
     }
     self.combos = combos
   }
