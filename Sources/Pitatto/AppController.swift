@@ -19,7 +19,7 @@ final class AppController: ObservableObject {
   /// The shortcuts macOS refused to register, and the ones bound to a
   /// combination another Pitatto command already owns. Both make the row go
   /// red; the wording is the settings screen's business.
-  @Published private(set) var unavailableShortcuts: Set<SnapCommand> = []
+  @Published private(set) var unavailableShortcuts: Set<ShortcutCommand> = []
 
   /// Which field is waiting for a key press, if any. The hot keys are handed
   /// back for the duration, so the recorder can see ⌥⌃→ instead of having it
@@ -29,17 +29,17 @@ final class AppController: ObservableObject {
   /// recording and no field can see the others. A field that kept its own flag
   /// stayed lit — and kept its key monitor installed — when the person gave up
   /// on it and pressed a different one.
-  @Published private(set) var recordingCommand: SnapCommand?
+  @Published private(set) var recordingCommand: ShortcutCommand?
 
   /// What the last recording could not take. The binding is left as it was, so
   /// this is the only trace of the attempt; it is cleared by the next one.
   @Published private(set) var rejection: Rejection?
 
   struct Rejection: Equatable {
-    let command: SnapCommand
+    let command: ShortcutCommand
     let combo: KeyCombo
     /// The row that already owns the combination, when that is the reason.
-    let heldBy: SnapCommand?
+    let heldBy: ShortcutCommand?
   }
 
   var isRecording: Bool { recordingCommand != nil }
@@ -82,6 +82,8 @@ final class AppController: ObservableObject {
 
   private var hasStarted = false
 
+  private var isMovingToSpace = false
+
   init(store: SettingsStore = SettingsStore()) {
     self.store = store
     self.settings = store.load()
@@ -96,7 +98,7 @@ final class AppController: ObservableObject {
     guard !hasStarted else { return }
     hasStarted = true
 
-    hotKeys.onPress = { [weak self] command in self?.snap(command) }
+    hotKeys.onPress = { [weak self] command in self?.run(command) }
     applyShortcuts()
 
     permission.onChange = { [weak self] trusted in self?.isTrusted = trusted }
@@ -109,6 +111,13 @@ final class AppController: ObservableObject {
   }
 
   // MARK: - Snapping
+
+  private func run(_ command: ShortcutCommand) {
+    switch command {
+    case .snap(let command): snap(command)
+    case .moveToSpace(let direction): moveToSpace(direction)
+    }
+  }
 
   /// One press of one shortcut.
   ///
@@ -138,6 +147,21 @@ final class AppController: ObservableObject {
         + " current=[\(Diagnostics.describe(current))] target=[\(Diagnostics.describe(plan.target))]"
         + " min=\(minimumSize.map { "\(Int($0.width))×\(Int($0.height))" } ?? "unknown")")
     perform(effect, on: window, from: current)
+  }
+
+  /// Sends the front window to the Desktop beside the current one. A press
+  /// while the last move is still holding the window is dropped: the window is
+  /// already on its way, and a second grab would land on the next Desktop's
+  /// windows instead.
+  func moveToSpace(_ direction: SpaceDirection) {
+    guard isTrusted, !isMovingToSpace else { return }
+    guard let window = WindowController.frontmostWindow() else { return }
+    guard !WindowController.isFullScreen(window) else { return }
+    isMovingToSpace = true
+    Task {
+      await SpaceMover.move(window, toward: direction)
+      isMovingToSpace = false
+    }
   }
 
   /// Carries out what the session decided for a press.
@@ -215,7 +239,7 @@ final class AppController: ObservableObject {
   // MARK: - Recording a shortcut
 
   /// Starts recording `command`, ending whatever was recording before it.
-  func beginRecording(for command: SnapCommand) {
+  func beginRecording(for command: ShortcutCommand) {
     guard recordingCommand != command else { return }
     recordingCommand = command
     rejection = nil
@@ -225,12 +249,12 @@ final class AppController: ObservableObject {
   /// Takes a combination away from `command`. The × on a field, which is the
   /// discoverable half of ⌫ — that one only works while the field is armed,
   /// which is not where someone looking at a filled field starts.
-  func clearShortcut(for command: SnapCommand) {
+  func clearShortcut(for command: ShortcutCommand) {
     rejection = nil
     settings.shortcuts[command] = nil
   }
 
-  func endRecording(with outcome: ShortcutRecorder.Outcome, for command: SnapCommand) {
+  func endRecording(with outcome: ShortcutRecorder.Outcome, for command: ShortcutCommand) {
     guard recordingCommand == command else { return }
     recordingCommand = nil
     switch outcome {
@@ -254,7 +278,7 @@ final class AppController: ObservableObject {
   /// back rather than saved. Saving it and colouring the row red left the
   /// person with two losses instead of one: the combination they just pressed
   /// does nothing, and the key that used to work is gone.
-  private func assign(_ combo: KeyCombo, to command: SnapCommand) {
+  private func assign(_ combo: KeyCombo, to command: ShortcutCommand) {
     let previous = settings.shortcuts[command]
     let heldBy = settings.shortcuts.command(holding: combo, otherThan: command)
     settings.shortcuts[command] = combo

@@ -11,9 +11,10 @@ import Testing
 struct ShortcutsTests {
 
   private let combo = KeyCombo(keyCode: KeyCode.space, modifiers: [.option])
-  private let left = SnapCommand(action: .left)
-  private let right = SnapCommand(action: .right)
-  private let leftHalf = SnapCommand(action: .left, size: .oneHalf)
+  private let left = ShortcutCommand.snap(SnapCommand(action: .left))
+  private let right = ShortcutCommand.snap(SnapCommand(action: .right))
+  private let leftHalf = ShortcutCommand.snap(SnapCommand(action: .left, size: .oneHalf))
+  private let spaceLeft = ShortcutCommand.moveToSpace(.left)
 
   @Test("The shipped shortcuts hold no duplicate")
   func theDefaultsHoldNoDuplicate() {
@@ -35,6 +36,15 @@ struct ShortcutsTests {
     shortcuts[right] = combo
     shortcuts[leftHalf] = combo
     #expect(shortcuts.duplicatedCommands() == [left, right, leftHalf])
+  }
+
+  @Test("A Desktop move and a snap on one combination are both reported")
+  func aDesktopMoveAndASnapOnOneComboAreBothReported() {
+    var shortcuts = Shortcuts([:])
+    shortcuts[left] = combo
+    shortcuts[spaceLeft] = combo
+    #expect(shortcuts.duplicatedCommands() == [left, spaceLeft])
+    #expect(shortcuts.command(holding: combo, otherThan: left) == spaceLeft)
   }
 
   @Test("Commands with no key do not collide with each other")
