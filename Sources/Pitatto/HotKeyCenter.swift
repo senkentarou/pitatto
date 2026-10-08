@@ -18,9 +18,9 @@ final class HotKeyCenter {
   static let shared = HotKeyCenter()
 
   /// Called on the main thread when one of the registered keys is pressed.
-  var onPress: ((ShortcutCommand) -> Void)?
+  var onPress: ((SnapCommand) -> Void)?
 
-  private var refs: [ShortcutCommand: EventHotKeyRef] = [:]
+  private var refs: [SnapCommand: EventHotKeyRef] = [:]
   private var eventHandler: EventHandlerRef?
 
   private init() {}
@@ -31,12 +31,12 @@ final class HotKeyCenter {
   /// Failures are returned rather than thrown because the rest have to keep
   /// working: the one bad row goes red in the settings, and the app does not
   /// stop taking keys.
-  func register(_ shortcuts: Shortcuts) -> Set<ShortcutCommand> {
+  func register(_ shortcuts: Shortcuts) -> Set<SnapCommand> {
     unregisterAll()
     installEventHandlerIfNeeded()
 
-    var failed: Set<ShortcutCommand> = []
-    for command in ShortcutCommand.allCases {
+    var failed: Set<SnapCommand> = []
+    for command in SnapCommand.allCases {
       // Most of the sized commands have no key. There is nothing to register
       // for those, and nothing that could fail.
       guard let combo = shortcuts[command] else { continue }
@@ -77,17 +77,17 @@ final class HotKeyCenter {
 
   fileprivate func fire(_ identifier: UInt32) {
     let index = Int(identifier) - 1
-    guard ShortcutCommand.allCases.indices.contains(index) else { return }
-    onPress?(ShortcutCommand.allCases[index])
+    guard SnapCommand.allCases.indices.contains(index) else { return }
+    onPress?(SnapCommand.allCases[index])
   }
 
   /// The position in `allCases`, one-based — Carbon treats 0 as unset.
   ///
-  /// Derived rather than written out: twenty-two hand-assigned numbers would be
-  /// twenty-two chances to repeat one, and the value only has to stay put for
+  /// Derived rather than written out: twenty hand-assigned numbers would be
+  /// twenty chances to repeat one, and the value only has to stay put for
   /// as long as the process lives.
-  private func identifier(for command: ShortcutCommand) -> UInt32 {
-    UInt32((ShortcutCommand.allCases.firstIndex(of: command) ?? 0) + 1)
+  private func identifier(for command: SnapCommand) -> UInt32 {
+    UInt32((SnapCommand.allCases.firstIndex(of: command) ?? 0) + 1)
   }
 
   private func carbonModifiers(_ modifiers: KeyCombo.Modifiers) -> UInt32 {

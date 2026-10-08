@@ -76,12 +76,6 @@ final class SettingsStoreTests {
     #expect(
       loaded.shortcuts[SnapCommand(action: .left, size: .oneQuarter)] == nil,
       "a sized command nobody bound stays unbound")
-    for direction in SpaceDirection.allCases {
-      let command = ShortcutCommand.moveToSpace(direction)
-      #expect(
-        loaded.shortcuts[command] == Shortcuts.default[command],
-        "\(command.id) was not in the blob")
-    }
   }
 
   /// A blob from before the ⌃⌘ defaults: maximize and left are still on the
@@ -155,10 +149,6 @@ final class SettingsStoreTests {
     #expect(shortcuts[SnapCommand(action: .right)]?.namedKeyLabel == "→")
     #expect(shortcuts[SnapCommand(action: .top)]?.namedKeyLabel == "↑")
     #expect(shortcuts[SnapCommand(action: .bottom)]?.namedKeyLabel == "↓")
-    #expect(shortcuts[.moveToSpace(.left)]?.modifierSymbols == "⌃⇧⌘")
-    #expect(shortcuts[.moveToSpace(.left)]?.namedKeyLabel == "←")
-    #expect(shortcuts[.moveToSpace(.right)]?.modifierSymbols == "⌃⇧⌘")
-    #expect(shortcuts[.moveToSpace(.right)]?.namedKeyLabel == "→")
   }
 
   /// Every size is reachable by cycling already, so a default for each would
@@ -176,10 +166,10 @@ final class SettingsStoreTests {
   @Test("Every command reaches its own shortcut")
   func everyCommandReachesItsOwnShortcut() {
     var shortcuts = Shortcuts.default
-    for (index, command) in ShortcutCommand.allCases.enumerated() {
+    for (index, command) in SnapCommand.allCases.enumerated() {
       shortcuts[command] = KeyCombo(keyCode: UInt16(index), modifiers: [.command])
     }
-    for (index, command) in ShortcutCommand.allCases.enumerated() {
+    for (index, command) in SnapCommand.allCases.enumerated() {
       #expect(shortcuts[command]?.keyCode == UInt16(index))
     }
   }
@@ -205,17 +195,6 @@ final class SettingsStoreTests {
     let reloaded = SettingsStore(defaults: defaults).load()
     #expect(reloaded.shortcuts[SnapCommand(action: .left)] == nil)
     #expect(reloaded.shortcuts[SnapCommand(action: .right)] != nil, "only the cleared key is gone")
-  }
-
-  @Test("A cleared Desktop move stays cleared after a relaunch")
-  func aClearedDesktopMoveStaysClearedAfterARelaunch() {
-    var settings = Settings.default
-    settings.shortcuts[.moveToSpace(.right)] = nil
-    SettingsStore(defaults: defaults).save(settings)
-
-    let reloaded = SettingsStore(defaults: defaults).load()
-    #expect(reloaded.shortcuts[.moveToSpace(.right)] == nil)
-    #expect(reloaded.shortcuts[.moveToSpace(.left)] != nil, "only the cleared key is gone")
   }
 
   @Test("A cleared key is stored as null")
