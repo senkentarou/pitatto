@@ -4,13 +4,6 @@
 
 import PitattoCore
 
-func label(for command: ShortcutCommand) -> String {
-  switch command {
-  case .snap(let command): return label(for: command)
-  case .moveToSpace(let direction): return label(for: direction)
-  }
-}
-
 /// `左に寄せる` for a cycling command, `左に寄せる 1/2` for a sized one.
 func label(for command: SnapCommand) -> String {
   guard let size = command.size else { return label(for: command.action) }
@@ -33,12 +26,5 @@ func label(for action: SnapAction) -> String {
   case .right: return "右に寄せる"
   case .top: return "上に寄せる"
   case .bottom: return "下に寄せる"
-  }
-}
-
-func label(for direction: SpaceDirection) -> String {
-  switch direction {
-  case .left: return "左のデスクトップへ移動"
-  case .right: return "右のデスクトップへ移動"
   }
 }

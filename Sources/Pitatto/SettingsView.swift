@@ -96,19 +96,6 @@ struct SettingsView: View {
     ) {
       grid(for: [.left, .right, .top, .bottom])
     }
-    SettingsSection(
-      footer: "画面もウィンドウと一緒に切り替わります。システム設定の「キーボードショートカット」>"
-        + "「Mission Control」で「左の操作スペースに移動」と「右の操作スペースに移動」がオンのときに動きます。"
-    ) {
-      ForEach(Array(SpaceDirection.allCases.enumerated()), id: \.element) { index, direction in
-        if index > 0 { SettingsRowDivider() }
-        let command = ShortcutCommand.moveToSpace(direction)
-        SettingsRow(title: label(for: direction), caption: conflictMessage(for: command)) {
-          recorder(for: command)
-            .frame(width: SettingsChrome.gridColumnWidth)
-        }
-      }
-    }
   }
 
   /// Actions that share one list of sizes, under one header.
@@ -117,7 +104,7 @@ struct SettingsView: View {
       titles: ["サイクル"] + SnapCycle.steps(for: actions[0]).map(label(for:)))
     ForEach(Array(actions.enumerated()), id: \.element) { index, action in
       if index > 0 { SettingsRowDivider() }
-      let commands = SnapCommand.commands(for: action).map(ShortcutCommand.snap)
+      let commands = SnapCommand.commands(for: action)
       SettingsGridRow(
         title: label(for: action),
         // The refused keystroke wins the row's one caption, even when a field
@@ -134,7 +121,7 @@ struct SettingsView: View {
     }
   }
 
-  private func recorder(for command: ShortcutCommand) -> some View {
+  private func recorder(for command: SnapCommand) -> some View {
     ShortcutRecorder(
       command: command,
       combo: controller.settings.shortcuts[command],
@@ -156,7 +143,7 @@ struct SettingsView: View {
   ///
   /// A grid row names the command, not just the action: the four fields share
   /// one caption, so "左に寄せる 1/2" is what tells them apart.
-  private func conflictMessage(for command: ShortcutCommand) -> String? {
+  private func conflictMessage(for command: SnapCommand) -> String? {
     if let rejection = controller.rejection, rejection.command == command {
       let key = KeyLabel.text(for: rejection.combo)
       guard let heldBy = rejection.heldBy else {

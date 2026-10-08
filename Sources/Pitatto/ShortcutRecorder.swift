@@ -14,7 +14,7 @@ struct ShortcutRecorder: View {
     case assigned(KeyCombo)
   }
 
-  let command: ShortcutCommand
+  let command: SnapCommand
   /// nil when nothing is bound.
   let combo: KeyCombo?
   /// The row goes red when macOS refused the registration, or when another

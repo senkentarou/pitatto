@@ -152,38 +152,7 @@ enum WindowController {
     return seated
   }
 
-  /// Where a press grabs the window to drag it, in the top-left-origin
-  /// coordinates that both Accessibility and `CGEvent` use.
-  ///
-  /// Just past the zoom button, level with it: in the title bar of a plain
-  /// window, and in the gap before the first tab of a window that draws its
-  /// tabs there — grabbing a tab would tear it off instead of moving the
-  /// window. A window with no zoom button is grabbed at the middle of its top.
-  static func grabPoint(of window: Window) -> CGPoint? {
-    if let button = element(window.element, kAXZoomButtonAttribute),
-      let origin = point(button, kAXPositionAttribute),
-      let size = size(button, kAXSizeAttribute)
-    {
-      return CGPoint(x: origin.x + size.width + 6, y: origin.y + size.height / 2)
-    }
-    guard
-      let origin = point(window.element, kAXPositionAttribute),
-      let size = size(window.element, kAXSizeAttribute)
-    else { return nil }
-    return CGPoint(x: origin.x + size.width / 2, y: origin.y + 6)
-  }
-
   // MARK: - Attribute plumbing
-
-  private static func element(_ element: AXUIElement, _ attribute: String) -> AXUIElement? {
-    var value: CFTypeRef?
-    guard
-      AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success,
-      let value,
-      CFGetTypeID(value) == AXUIElementGetTypeID()
-    else { return nil }
-    return (value as! AXUIElement)
-  }
 
   private static func point(_ element: AXUIElement, _ attribute: String) -> CGPoint? {
     guard let value = axValue(element, attribute) else { return nil }
